@@ -1,0 +1,61 @@
+[project]
+name = "robotics-rl"
+version = "0.1.0"
+description = "RL fine-tuning for Vision-Language-Action models in robotics"
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    # Core ML
+    "torch>=2.0.0",
+    "transformers>=4.36.0",
+    "accelerate>=0.25.0",
+
+    # Robotics simulation
+    "mujoco>=3.0.0",
+    "robosuite>=1.5.0",
+    "gymnasium>=0.29.0",
+
+    # Utilities
+    "numpy>=1.24.0",
+    "tqdm",
+    "wandb",
+    "pillow",
+    "opencv-python",
+
+    # Jupyter for experimentation
+    "jupyter",
+    "ipykernel",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "black",
+    "ruff",
+]
+
+octo = [
+    # Octo needs JAX and specific deps - install separately
+    "jax[cuda12]",
+    "flax",
+    "distrax",
+]
+
+isaac = [
+    # Isaac Lab dependencies (separate due to complexity)
+    "isaacsim",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["configs", "envs", "models", "training"]
+
+[dependency-groups]
+dev = [
+    "pytest",
+    "black",
+    "ruff",
+]
