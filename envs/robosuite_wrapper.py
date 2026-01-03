@@ -65,11 +65,11 @@ class RobosuiteGymWrapper(gym.Env):
             robots=robots,
             # controller_config=controller_config,
             has_renderer=False,
-            has_offscreen_renderer=True,
-            use_camera_obs=True,
-            camera_names="agentview",
-            camera_heights=256,
-            camera_widths=256,
+            has_offscreen_renderer=False,
+            use_camera_obs=False,
+            # camera_names="agentview",
+            # camera_heights=256,
+            # camera_widths=256,
             reward_shaping=True,
         )
         sample_obs = self.env.reset()
