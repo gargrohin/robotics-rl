@@ -47,6 +47,10 @@ def parse_args():
                         help="GAE lambda")
     parser.add_argument("--clip_epsilon", type=float, default=0.2,
                         help="PPO clipping epsilon")
+    parser.add_argument("--entropy_coef", type=float, default=0.01,
+                        help="Entropy bonus coefficient")
+    parser.add_argument("--max_grad_norm", type=float, default=0.5,
+                        help="Max gradient norm for clipping")
     parser.add_argument("--n_epochs", type=int, default=10,
                         help="Number of PPO epochs per update")
     parser.add_argument("--batch_size", type=int, default=64,
@@ -96,6 +100,8 @@ def main():
         gamma=args.gamma,
         gae_lambda=args.gae_lambda,
         clip_epsilon=args.clip_epsilon,
+        entropy_coef=args.entropy_coef,
+        max_grad_norm=args.max_grad_norm,
         n_epochs=args.n_epochs,
         batch_size=args.batch_size,
         rollout_steps=args.rollout_steps,
@@ -110,12 +116,14 @@ def main():
     trainer.train(
         total_timesteps=args.total_timesteps,
         project_name=args.wandb_project,
+        save_dir=str(save_dir),
     )
 
     # Save final model
     run_name = args.run_name or f"{args.env_name}_{args.total_timesteps}"
-    save_path = save_dir / f"ppo_{run_name}.pt"
+    save_path = save_dir / f"ppo_{run_name}_final.pt"
     trainer.save(str(save_path))
+    print(f"Best model saved at: {save_dir}/ppo_best.pt")
 
     # Cleanup
     env.close()

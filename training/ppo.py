@@ -195,6 +195,7 @@ class PPOTrainer:
         total_policy_loss = 0
         total_value_loss = 0
         num_updates = 0
+        total_entropy = 0
 
         # This is non trivial
         self.rollout_buffer.normalize_advantages()
@@ -207,6 +208,7 @@ class PPOTrainer:
                 mean, std, values = self.policy(obs)
                 dist = Normal(mean, std)
                 new_log_probs = dist.log_prob(actions).sum(dim=-1)
+                entropy = dist.entropy().mean()
 
                 # policy loss
                 ratio = torch.exp(new_log_probs - log_probs)
@@ -217,11 +219,15 @@ class PPOTrainer:
                 # value loss
                 value_loss = F.mse_loss(values.squeeze(), returns)
                 total_value_loss += value_loss.item()
+                
                 # loss
                 loss = policy_loss + self.config.value_loss_coef * value_loss
+                loss -= self.config.entropy_coef * entropy
+                total_entropy += entropy.item()
 
                 self.optimizer.zero_grad()
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.config.max_grad_norm)
                 self.optimizer.step()
 
                 num_updates += 1
@@ -229,13 +235,16 @@ class PPOTrainer:
         return {
             "policy_loss": total_policy_loss / num_updates,
             "value_loss": total_value_loss / num_updates,
+            "entropy": total_entropy / num_updates,
         }
 
-    def train(self, total_timesteps, project_name="ppo-robosuite"):
+    def train(self, total_timesteps, project_name="ppo-robosuite", save_dir="checkpoints"):
 
         wandb.init(project=project_name, config=self.config)
 
         num_iterations = total_timesteps // self.config.rollout_steps
+        best_reward = float('-inf')
+
         for iteration in range(num_iterations):
             episode_rewards = self.collect_rollouts()
             losses = self.update()
@@ -246,13 +255,21 @@ class PPOTrainer:
             log_dict = {
                 "policy_loss": losses["policy_loss"],
                 "value_loss": losses["value_loss"],
+                "entropy": losses["entropy"],
                 "timesteps": timesteps,
             }
             if len(episode_rewards) > 0:
-                log_dict["episode_reward_mean"] = np.mean(episode_rewards)
+                mean_reward = np.mean(episode_rewards)
+                log_dict["episode_reward_mean"] = mean_reward
                 log_dict["episode_reward_min"] = np.min(episode_rewards)
                 log_dict["episode_reward_max"] = np.max(episode_rewards)
                 log_dict["episodes_this_iter"] = len(episode_rewards)
+
+                # Save best model
+                if mean_reward > best_reward:
+                    best_reward = mean_reward
+                    self.save(f"{save_dir}/ppo_best.pt")
+                    print(f"New best reward: {best_reward:.2f} - Model saved!")
 
             wandb.log(log_dict)
 
@@ -260,7 +277,7 @@ class PPOTrainer:
             if iteration % 10 == 0:
                 if len(episode_rewards) > 0:
                     print(f"Iter {iteration}/{num_iterations} | Timesteps: {timesteps} | "
-                          f"Avg reward: {np.mean(episode_rewards):.2f} | "
+                          f"Avg reward: {mean_reward:.2f} | "
                           f"Policy loss: {losses['policy_loss']:.4f} | "
                           f"Value loss: {losses['value_loss']:.4f}")
                 else:
@@ -282,7 +299,7 @@ class PPOTrainer:
 
     def load(self, path):
         """Load model checkpoint."""
-        checkpoint = torch.load(path, map_location=self.device)
+        checkpoint = torch.load(path, map_location=self.device, weights_only=False)
         self.policy.load_state_dict(checkpoint['policy_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print(f"Model loaded from {path}")

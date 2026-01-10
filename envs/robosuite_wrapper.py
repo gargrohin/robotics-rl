@@ -29,6 +29,7 @@ class RobosuiteGymWrapper(gym.Env):
         obs_keys: list = None,
         max_episode_steps: int = 500,
         reward_scale: float = 1.0,
+        render_mode: str = None,
     ):
         """
         Initialize the wrapper.
@@ -57,19 +58,32 @@ class RobosuiteGymWrapper(gym.Env):
         self.max_episode_steps = max_episode_steps
         self._step_count = 0
 
+        self.render_mode = render_mode
+
         # controller_config = load_composite_controller_config(controller="BASIC")
         # controller_config["conf"]["arm"]["type"] = controller_type
 
+        if self.render_mode:
+            has_offscreen_renderer = True
+            camera_names = "agentview"
+            camera_heights = 256
+            camera_widths = 256
+        else:
+            has_offscreen_renderer = False
+            camera_names = None
+            camera_heights = None
+            camera_widths = None
+        
         self.env = suite.make(
             env_name=env_name,
             robots=robots,
             # controller_config=controller_config,
             has_renderer=False,
-            has_offscreen_renderer=False,
-            use_camera_obs=False,
-            # camera_names="agentview",
-            # camera_heights=256,
-            # camera_widths=256,
+            has_offscreen_renderer=has_offscreen_renderer,
+            use_camera_obs=True if self.render_mode else False,
+            camera_names=camera_names,
+            camera_heights=camera_heights,
+            camera_widths=camera_widths,
             reward_shaping=True,
         )
         sample_obs = self.env.reset()
@@ -117,6 +131,10 @@ class RobosuiteGymWrapper(gym.Env):
 
         robosuite_obs = self.env.reset()
         obs = self._get_obs(robosuite_obs)
+
+        if self.render_mode:
+            self._last_frame = robosuite_obs["agentview_image"]
+
         return obs, {}
 
     def step(self, action: np.ndarray):
@@ -141,6 +159,9 @@ class RobosuiteGymWrapper(gym.Env):
         # Step the robosuite environment
         robosuite_obs, reward, done, info = self.env.step(action)
 
+        if self.render_mode:
+            self._last_frame = robosuite_obs["agentview_image"]
+
         # Convert observation
         obs = self._get_obs(robosuite_obs)
 
@@ -161,7 +182,10 @@ class RobosuiteGymWrapper(gym.Env):
 
     def render(self):
         """Render is not supported in headless mode."""
-        pass
+        if self.render_mode:
+            return self._last_frame
+        else:
+            return None
 
     def close(self):
         """Clean up the environment."""
