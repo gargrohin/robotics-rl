@@ -11,6 +11,9 @@ from gymnasium import spaces
 import robosuite as suite
 from robosuite.controllers import load_composite_controller_config
 
+from envs.lift_custom import LiftCustomReward
+
+
 class RobosuiteGymWrapper(gym.Env):
     """
     Wraps a robosuite environment to be compatible with Gymnasium.
@@ -30,6 +33,8 @@ class RobosuiteGymWrapper(gym.Env):
         max_episode_steps: int = 500,
         reward_scale: float = 1.0,
         render_mode: str = None,
+        use_custom_reward: bool = False,
+        custom_reward_kwargs: dict = None,
     ):
         """
         Initialize the wrapper.
@@ -41,6 +46,9 @@ class RobosuiteGymWrapper(gym.Env):
             obs_keys: list of observation keys to include in flattened obs
             max_episode_steps: horizon for the episode
             reward_scale: multiply rewards by this factor
+            render_mode: "rgb_array" for video recording, None for no rendering
+            use_custom_reward: if True, use LiftCustomReward with better shaping
+            custom_reward_kwargs: kwargs for LiftCustomReward (reaching_weight, grasp_reward, etc.)
         """
         super().__init__()
 
@@ -73,19 +81,28 @@ class RobosuiteGymWrapper(gym.Env):
             camera_names = None
             camera_heights = None
             camera_widths = None
-        
-        self.env = suite.make(
-            env_name=env_name,
+
+        # Common env kwargs
+        env_kwargs = dict(
             robots=robots,
-            # controller_config=controller_config,
             has_renderer=False,
             has_offscreen_renderer=has_offscreen_renderer,
             use_camera_obs=True if self.render_mode else False,
             camera_names=camera_names,
             camera_heights=camera_heights,
             camera_widths=camera_widths,
-            reward_shaping=True,
         )
+
+        # Create environment (custom reward or standard)
+        if use_custom_reward and env_name == "Lift":
+            custom_kwargs = custom_reward_kwargs or {}
+            self.env = LiftCustomReward(**env_kwargs, **custom_kwargs)
+        else:
+            self.env = suite.make(
+                env_name=env_name,
+                reward_shaping=True,
+                **env_kwargs,
+            )
         sample_obs = self.env.reset()
         obs_dim = sum(sample_obs[key].flatten().shape[0] for key in self.obs_keys)
 

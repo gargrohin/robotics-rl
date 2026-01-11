@@ -38,6 +38,18 @@ def parse_args():
     parser.add_argument("--max_episode_steps", type=int, default=500,
                         help="Max steps per episode")
 
+    # Custom reward args
+    parser.add_argument("--custom_reward", action="store_true",
+                        help="Use custom reward shaping (recommended)")
+    parser.add_argument("--reaching_weight", type=float, default=0.1,
+                        help="Weight for reaching reward (custom reward)")
+    parser.add_argument("--grasp_reward", type=float, default=5.0,
+                        help="Reward for grasping (custom reward)")
+    parser.add_argument("--lift_reward", type=float, default=10.0,
+                        help="Reward for lifting progress (custom reward)")
+    parser.add_argument("--success_reward", type=float, default=50.0,
+                        help="Reward for successful lift (custom reward)")
+
     # PPO hyperparameters
     parser.add_argument("--lr", type=float, default=3e-4,
                         help="Learning rate")
@@ -86,10 +98,23 @@ def main():
 
     # Create environment
     print(f"Creating {args.env_name} environment with {args.robot} robot...")
+    if args.custom_reward:
+        print("Using custom reward shaping")
+        custom_reward_kwargs = {
+            "reaching_weight": args.reaching_weight,
+            "grasp_reward": args.grasp_reward,
+            "lift_reward": args.lift_reward,
+            "success_reward": args.success_reward,
+        }
+    else:
+        custom_reward_kwargs = None
+
     env = RobosuiteGymWrapper(
         env_name=args.env_name,
         robots=args.robot,
         max_episode_steps=args.max_episode_steps,
+        use_custom_reward=args.custom_reward,
+        custom_reward_kwargs=custom_reward_kwargs,
     )
     print(f"Observation space: {env.observation_space.shape}")
     print(f"Action space: {env.action_space.shape}")
