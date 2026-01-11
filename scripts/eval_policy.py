@@ -23,6 +23,8 @@ def parse_args():
                         help="Save video of evaluation (requires imageio)")
     parser.add_argument("--deterministic", action="store_true",
                         help="Use deterministic actions (mean instead of sampling)")
+    parser.add_argument("--custom_reward", action="store_true",
+                        help="Use custom reward environment (must match training)")
     return parser.parse_args()
 
 # Parse args and set env vars before importing mujoco/robosuite
@@ -110,7 +112,11 @@ def main():
 
     # Create environment
     render_mode = "rgb_array" if args.save_video else None
-    env = RobosuiteGymWrapper(env_name="Lift", render_mode=render_mode)
+    env = RobosuiteGymWrapper(
+        env_name="Lift",
+        render_mode=render_mode,
+        use_custom_reward=args.custom_reward,
+    )
 
     # Create and load policy
     obs_dim = env.observation_space.shape[0]
