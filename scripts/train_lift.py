@@ -43,12 +43,14 @@ def parse_args():
                         help="Use custom reward shaping (recommended)")
     parser.add_argument("--reaching_weight", type=float, default=0.1,
                         help="Weight for reaching reward (custom reward)")
-    parser.add_argument("--grasp_reward", type=float, default=5.0,
+    parser.add_argument("--grasp_reward", type=float, default=0.5,
                         help="Reward for grasping (custom reward)")
-    parser.add_argument("--lift_reward", type=float, default=10.0,
+    parser.add_argument("--lift_reward", type=float, default=1.0,
                         help="Reward for lifting progress (custom reward)")
-    parser.add_argument("--success_reward", type=float, default=50.0,
+    parser.add_argument("--success_reward", type=float, default=100.0,
                         help="Reward for successful lift (custom reward)")
+    parser.add_argument("--time_penalty", type=float, default=0.5,
+                        help="Penalty per timestep (custom reward)")
 
     # PPO hyperparameters
     parser.add_argument("--lr", type=float, default=3e-4,
@@ -105,6 +107,7 @@ def main():
             "grasp_reward": args.grasp_reward,
             "lift_reward": args.lift_reward,
             "success_reward": args.success_reward,
+            "time_penalty": args.time_penalty,
         }
     else:
         custom_reward_kwargs = None
