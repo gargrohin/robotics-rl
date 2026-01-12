@@ -43,6 +43,8 @@ def parse_args():
                         help="Use custom reward shaping (recommended)")
     parser.add_argument("--reaching_weight", type=float, default=0.1,
                         help="Weight for reaching reward (custom reward)")
+    parser.add_argument("--reaching_coeff", type=float, default=3.0,
+                        help="Coefficient for tanh in reaching reward (lower=gentler gradient)")
     parser.add_argument("--grasp_reward", type=float, default=0.5,
                         help="Reward for grasping (custom reward)")
     parser.add_argument("--lift_reward", type=float, default=1.0,
@@ -104,6 +106,7 @@ def main():
         print("Using custom reward shaping")
         custom_reward_kwargs = {
             "reaching_weight": args.reaching_weight,
+            "reaching_coeff": args.reaching_coeff,
             "grasp_reward": args.grasp_reward,
             "lift_reward": args.lift_reward,
             "success_reward": args.success_reward,

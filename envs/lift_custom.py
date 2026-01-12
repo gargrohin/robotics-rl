@@ -24,6 +24,7 @@ class LiftCustomReward(Lift):
     def __init__(
         self,
         reaching_weight: float = 0.1,
+        reaching_coeff: float = 3.0,
         grasp_reward: float = 0.5,
         lift_reward: float = 1.0,
         success_reward: float = 100.0,
@@ -31,6 +32,7 @@ class LiftCustomReward(Lift):
         **kwargs
     ):
         self.reaching_weight = reaching_weight
+        self.reaching_coeff = reaching_coeff
         self.grasp_reward = grasp_reward
         self.lift_reward = lift_reward
         self.success_reward = success_reward
@@ -95,7 +97,7 @@ class LiftCustomReward(Lift):
             return_distance=True
         )
 
-        dist_reward = 1 - np.tanh(10*dist)
+        dist_reward = 1 - np.tanh(self.reaching_coeff * dist)
         dist_reward *= self.reaching_weight
         reward += dist_reward
 
