@@ -49,7 +49,7 @@ from training.ppo import ActorCritic
 import imageio
 
 
-def evaluate(policy, env, num_episodes, deterministic=False, device="cuda", save_video=False):
+def evaluate(policy, env, num_episodes, deterministic=False, device="cuda", save_video=False, video_dir="."):
     """Run evaluation episodes and return statistics."""
     episode_rewards = []
     episode_lengths = []
@@ -80,8 +80,8 @@ def evaluate(policy, env, num_episodes, deterministic=False, device="cuda", save
                 frames.append(env.render())
 
         if frames is not None and len(frames) > 0:
-            video_path = "eval_episode.mp4"
-            imageio.mimsave(video_path, frames, fps=30)
+            video_path = Path(video_dir) / "eval_episode.mp4"
+            imageio.mimsave(str(video_path), frames, fps=30)
             print(f"Saved video to {video_path}")
             frames = []
         episode_rewards.append(episode_reward)
@@ -128,12 +128,14 @@ def main():
     print(f"\nEvaluating for {args.num_episodes} episodes...")
     print("-" * 50)
 
-    # Run evaluation
+    # Run evaluation (save video in checkpoint directory)
+    checkpoint_dir = Path(args.checkpoint).parent
     stats = evaluate(
         policy, env, args.num_episodes,
         deterministic=args.deterministic,
         device=args.device,
         save_video=args.save_video,
+        video_dir=str(checkpoint_dir),
     )
 
     # Print summary

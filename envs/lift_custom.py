@@ -24,15 +24,17 @@ class LiftCustomReward(Lift):
     def __init__(
         self,
         reaching_weight: float = 0.1,
-        grasp_reward: float = 5.0,
-        lift_reward: float = 10.0,
-        success_reward: float = 50.0,
+        grasp_reward: float = 0.5,
+        lift_reward: float = 1.0,
+        success_reward: float = 100.0,
+        time_penalty: float = 0.5,
         **kwargs
     ):
         self.reaching_weight = reaching_weight
         self.grasp_reward = grasp_reward
         self.lift_reward = lift_reward
         self.success_reward = success_reward
+        self.time_penalty = time_penalty
 
         # Ensure reward_shaping is True (we're doing our own shaping)
         kwargs['reward_shaping'] = True
@@ -108,6 +110,9 @@ class LiftCustomReward(Lift):
         if self._check_success():
             success_reward = self.success_reward
             reward += success_reward
-        
+
+        # Time penalty to encourage faster completion
+        reward -= self.time_penalty
+
         return reward
 
