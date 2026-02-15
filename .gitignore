@@ -46,8 +46,11 @@ logs/
 outputs/
 data/
 initial_helper_docs/
+downloaded_blogs/
 CLAUDE.md
 PROGRESS.md
+.claude/
+image.png
 
 # Model weights (large files)
 *.pt
