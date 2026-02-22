@@ -61,7 +61,7 @@ def evaluate(policy, env, num_episodes, deterministic=False, device="cuda", save
         episode_length = 0
         done = False
 
-        frames = [] if save_video and ep == 0 else None
+        frames = [] if save_video else None
 
         while not done:
             obs_tensor = torch.from_numpy(obs).float().to(device)
@@ -79,14 +79,16 @@ def evaluate(policy, env, num_episodes, deterministic=False, device="cuda", save
             if frames is not None:
                 frames.append(env.render())
 
-        if frames is not None and len(frames) > 0:
-            video_path = Path(video_dir) / "eval_episode.mp4"
-            imageio.mimsave(str(video_path), frames, fps=30)
-            print(f"Saved video to {video_path}")
-            frames = []
         episode_rewards.append(episode_reward)
         episode_lengths.append(episode_length)
-        successes.append(env._check_success())
+        success = env._check_success()
+        successes.append(success)
+
+        if frames is not None and len(frames) > 0:
+            outcome = "success" if success else "fail"
+            video_path = Path(video_dir) / f"eval_ep{ep}_{outcome}_{episode_reward:.0f}.mp4"
+            imageio.mimsave(str(video_path), frames, fps=30)
+            print(f"Saved video to {video_path}")
 
         print(f"Episode {ep + 1}: Reward = {episode_reward:.2f}, "
               f"Length = {episode_length}, Success = {successes[-1]}")
