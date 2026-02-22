@@ -47,6 +47,7 @@ outputs/
 data/
 initial_helper_docs/
 downloaded_blogs/
+blogpics/
 CLAUDE.md
 PROGRESS.md
 .claude/
