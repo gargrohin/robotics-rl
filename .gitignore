@@ -53,6 +53,10 @@ PROGRESS.md
 .claude/
 image.png
 
+# Local blog drafts (kept local, not published)
+blog_*.md
+reaching_reward_curve.png
+
 # Model weights (large files)
 *.pt
 *.pth
